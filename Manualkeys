@@ -1,1 +1,336 @@
 
+local spellEntry = [[
+UIWidget
+  background-color: alpha
+  text-offset: 18 0
+  focusable: true
+  height: 16
+
+  CheckBox
+    id: enabled
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    width: 15
+    height: 15
+    margin-top: 2
+    margin-left: 3
+    image-source: /images/ui/checkbox_round
+
+    $hover !disabled:
+      image-color: white
+  
+    $!checked:
+      image-color: #FF4500
+  
+    $checked:
+      image-color: #FF4500
+  
+    $disabled:
+      image-color: #dfdfdf88
+      color: #dfdfdf88
+      opacity: 0.8
+      change-cursor-image: false
+
+  $focus:
+    background-color: 
+    opacity: 0.4
+
+  CheckBox
+    id: showTimespell
+    anchors.left: enabled.left
+    anchors.verticalCenter: parent.verticalCenter
+    width: 15
+    height: 15
+    margin-top: 2
+    margin-left: 15
+    image-source: /images/ui/checkbox_round
+
+    $hover !disabled:
+      image-color: white
+  
+    $!checked:
+      image-color: #FF4500
+  
+    $checked:
+      image-color: #FF4500
+  
+    $disabled:
+      image-color: #dfdfdf88
+      color: #dfdfdf88
+      opacity: 0.8
+      change-cursor-image: false
+
+  $focus:
+    background-color: gray		
+    opacity: 0.9
+
+
+  Label
+    id: textToSet
+    anchors.left: showTimespell.left
+    anchors.verticalCenter: parent.verticalCenter
+    margin-left: 20
+
+  Button
+    id: remove
+    !text: tr('x')
+    color: #FF4500
+    anchors.right: parent.right
+    margin-right: 15
+    width: 15
+    height: 15
+    tooltip: Remove Spell
+]]
+
+local widgetConfig = [[
+UIWidget
+  background-color: #00000055
+  font: verdana-11px-rounded
+  opacity: 1.00
+  padding: 0 8
+  focusable: true
+  phantom: false
+  draggable: true
+  text-auto-resize: true
+]]
+
+keyIcon = setupUI([[
+Panel
+  height: 20
+  BotSwitch
+    id: title
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text-align: center
+    width: 130
+    text: Manual Keys
+    color: white
+    font: 
+
+  Button
+    id: settings
+    anchors.top: prev.top
+    anchors.left: prev.right
+    anchors.right: parent.right
+    margin-left: 3
+    height: 17
+    text: Config
+    color: white
+    font: 
+]])
+
+keyInterface = setupUI([[
+MainWindow
+  text: Fuga Panel
+  size: 300 400
+
+  Panel
+    image-source: /images/ui/panel_flat
+    anchors.right: parent.right
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: separator.top
+    margin: 5 5 5 5
+    image-border: 6
+    padding: 3
+    size: 320 235
+
+  TextList
+    id: spellList
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: parent.top
+    padding: 1
+    size: 240 215  
+    margin-top: 11
+    vertical-scrollbar: spellListScrollBar
+
+  Label
+    id: castSpellLabel
+    anchors.right: parent.right
+    anchors.bottom: castSpell.top
+    text: Spell Name
+    margin-bottom: 5
+    margin-right: 75
+
+  TextEdit
+    id: castSpell
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    margin-bottom: 60
+    margin-right: 14
+    width: 125
+
+  Label
+    id: keyLabel
+    anchors.left: parent.left
+    anchors.bottom: castSpell.top
+    text: Key
+    margin-bottom: 5
+    margin-left: 15
+
+  TextEdit
+    id: key
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    margin-bottom: 60
+    margin-left: 14
+    width: 70
+    editable: false
+
+  VerticalScrollBar
+    id: spellListScrollBar
+    anchors.top: spellList.top
+    anchors.bottom: spellList.bottom
+    anchors.right: spellList.right
+    step: 14
+    pixels-scroll: true
+
+  Button
+    id: insertKey
+    text: Insert Key
+    font: cipsoftFont
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    size: 60 25
+    margin-right: 5
+    margin-bottom: 5
+
+  HorizontalSeparator
+    id: separator
+    anchors.right: parent.right
+    anchors.left: parent.left
+    anchors.bottom: closeButton.top
+    margin-bottom: 5
+
+  Button
+    id: closeButton
+    !text: tr('Close')
+    font: cipsoftFont
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
+    size: 45 25
+    margin-left: 4
+    margin-bottom: 5
+      
+]], g_ui.getRootWidget())
+keyInterface:hide();
+
+keyIcon.title:setOn(isOn.keyMacro);
+keyIcon.title.onClick = function(widget)
+    isOn.keyMacro = not isOn.keyMacro;
+    widget:setOn(isOn.keyMacro);
+    scriptFuncs.saveProfile(STORAGE_DIRECTORY, storageProfiles);
+end
+
+keyIcon.settings.onClick = function(widget)
+    if not keyInterface:isVisible() then
+        keyInterface:show();
+        keyInterface:raise();
+        keyInterface:focus();
+    else
+        keyInterface:hide();
+        scriptFuncs.saveProfile(STORAGE_DIRECTORY, storageProfiles);
+    end
+end
+
+keyInterface.closeButton.onClick = function(widget)
+    keyInterface:hide();
+    scriptFuncs.saveProfile(STORAGE_DIRECTORY, storageProfiles);
+end
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+keyInterface.key.onHoverChange = function(widget, hovered)
+  if hovered then
+      x = true;
+      onKeyPress(function(key)
+          if not x then return; end
+          widget:setText(key)
+      end)
+  else
+      x = false;
+  end
+end
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+function refreshKeyList(list, table)
+  if table then
+      for i, child in pairs(list.spellList:getChildren()) do
+          child:destroy();
+      end
+      for index, entry in ipairs(table) do
+          local label = setupUI(spellEntry, list.spellList)
+          label.showTimespell:hide();
+          label.onDoubleClick = function(widget)
+              local spellTable = entry;
+              list.key:setText(spellTable.keyPress);
+              list.castSpell:setText(spellTable.spellCast);
+              for i, v in ipairs(storageProfiles.keySpells) do
+                  if v == entry then
+                      removeTable(storageProfiles.keySpells, i)
+                  end
+              end
+              scriptFuncs.reindexTable(table);
+              label:destroy();
+          end
+          label.enabled:setChecked(entry.enabled);
+          label.enabled:setTooltip(not entry.enabled and 'Enable Spell' or 'Disable Spell');
+          label.enabled.onClick = function(widget)
+              entry.enabled = not entry.enabled;
+              label.enabled:setChecked(entry.enabled);
+              label.enabled:setTooltip(not entry.enabled and 'Enable Spell' or 'Disable Spell');
+              scriptFuncs.saveProfile(STORAGE_DIRECTORY, storageProfiles);
+          end
+          label.remove.onClick = function(widget)
+              for i, v in ipairs(storageProfiles.keySpells) do
+                  if v == entry then
+                      removeTable(storageProfiles.keySpells, i)
+                  end
+              end
+              scriptFuncs.reindexTable(storageProfiles.keySpells);
+              label:destroy();
+          end
+          label.textToSet:setText(firstLetterUpper(entry.spellCast) .. ' | Key: ' .. entry.keyPress);
+      end
+  end
+end
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+keyInterface.insertKey.onClick = function(widget)
+  local keyPressed = keyInterface.key:getText();
+  local spellName = keyInterface.castSpell:getText():lower():trim();
+
+  if not keyPressed or keyPressed:len() == 0 then
+      return warn('Invalid Key.')
+  end
+  for _, config in ipairs(storageProfiles.keySpells) do
+    if config.keyPress == keyPressed then
+      return warn('Key Already Added.')
+    end
+  end
+  table.insert(storageProfiles.keySpells, {
+      index = #storageProfiles.keySpells+1,
+      spellCast = spellName,
+      keyPress = keyPressed,
+      enabled = true
+  });
+  refreshKeyList(keyInterface, storageProfiles.keySpells)
+  scriptFuncs.saveProfile(STORAGE_DIRECTORY, storageProfiles);
+  keyInterface.key:clearText();
+  keyInterface.castSpell:clearText();
+end
+
+refreshKeyList(keyInterface, storageProfiles.keySpells);
+
+macro(storage.scrollBars1.macroDelay, function()
+  if not keyIcon.title:isOn() then return; end
+  if modules.game_console:isChatEnabled() then return; end
+  for index, value in ipairs(storageProfiles.keySpells) do
+      if value.enabled and (modules.corelib.g_keyboard.areKeysPressed(value.keyPress)) then
+	stopCombo = now + 250;
+          say(value.spellCast)
+      end
+  end
+end);
